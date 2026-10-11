@@ -1,0 +1,24 @@
+# Raw data are public on GEO and too large for GitHub; recreate with data/download_raw_data.sh
+data/raw/
+
+# R / OS clutter
+.Rhistory
+.RData
+.Rproj.user/
+.DS_Store
+.here
+
+# Run logs and per-dataset scRNA caches (large; recreated by code/run_all.sh)
+logs/
+results/03_scrna/*.rds
+manuscript/
+results/04_immune/cibersortx_input/
+archive/
+data/cibersortx
+data/supplementary
+data/MANIFEST.md5
+review/
+
+# Large methylation intermediates (recreated by steps 13-14)
+results/08_methylation/*.rds
+results/08_methylation/*.tsv.gz

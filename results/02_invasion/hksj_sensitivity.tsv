@@ -1,0 +1,4 @@
+min_contrasts	genes_tested	fdr_0.05	fdr_0.10	fdr_0.20	nominal_p_0.01	wald_fdr_0.05
+2	22379	1	1	95	676	3298
+4	15817	1	1	340	620	2708
+5	9606	1	46	710	486	1790

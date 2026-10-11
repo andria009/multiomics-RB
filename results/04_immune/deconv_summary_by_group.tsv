@@ -1,0 +1,91 @@
+dataset	cell_type	group	median_score	n
+GSE110811	B cell	invasive	3.1204	9
+GSE110811	B cell	non-invasive	3.192	6
+GSE110811	Cancer associated fibroblast	invasive	2.923	9
+GSE110811	Cancer associated fibroblast	non-invasive	3.092	6
+GSE110811	Endothelial cell	invasive	3.1116	9
+GSE110811	Endothelial cell	non-invasive	3.1545	6
+GSE110811	Macrophage/Monocyte	invasive	3.0612	9
+GSE110811	Macrophage/Monocyte	non-invasive	3.2011	6
+GSE110811	Myeloid dendritic cell	invasive	2.8442	9
+GSE110811	Myeloid dendritic cell	non-invasive	2.787	6
+GSE110811	NK cell	invasive	2.9895	9
+GSE110811	NK cell	non-invasive	2.8522	6
+GSE110811	Neutrophil	invasive	3.2596	9
+GSE110811	Neutrophil	non-invasive	3.4182	6
+GSE110811	T cell	invasive	2.8707	9
+GSE110811	T cell	non-invasive	2.9679	6
+GSE110811	T cell CD8+	invasive	2.5995	9
+GSE110811	T cell CD8+	non-invasive	2.6543	6
+GSE110811	cytotoxicity score	invasive	2.9083	9
+GSE110811	cytotoxicity score	non-invasive	3.0503	6
+GSE268136	B cell	Cluster_A	1.5949	30
+GSE268136	B cell	Cluster_B	1.5104	14
+GSE268136	B cell	Cluster_C	1.6415	6
+GSE268136	Cancer associated fibroblast	Cluster_A	3.4792	30
+GSE268136	Cancer associated fibroblast	Cluster_B	3.3288	14
+GSE268136	Cancer associated fibroblast	Cluster_C	3.3307	6
+GSE268136	Endothelial cell	Cluster_A	1.777	30
+GSE268136	Endothelial cell	Cluster_B	1.8424	14
+GSE268136	Endothelial cell	Cluster_C	1.6934	6
+GSE268136	Macrophage/Monocyte	Cluster_A	2.3976	30
+GSE268136	Macrophage/Monocyte	Cluster_B	2.1474	14
+GSE268136	Macrophage/Monocyte	Cluster_C	2.4598	6
+GSE268136	Myeloid dendritic cell	Cluster_A	0.5864	30
+GSE268136	Myeloid dendritic cell	Cluster_B	0.6009	14
+GSE268136	Myeloid dendritic cell	Cluster_C	0.6778	6
+GSE268136	NK cell	Cluster_A	0.3205	30
+GSE268136	NK cell	Cluster_B	0.316	14
+GSE268136	NK cell	Cluster_C	0.4416	6
+GSE268136	Neutrophil	Cluster_A	1.8084	30
+GSE268136	Neutrophil	Cluster_B	1.768	14
+GSE268136	Neutrophil	Cluster_C	1.8433	6
+GSE268136	T cell	Cluster_A	1.0997	30
+GSE268136	T cell	Cluster_B	1.0873	14
+GSE268136	T cell	Cluster_C	1.1479	6
+GSE268136	T cell CD8+	Cluster_A	0.3628	30
+GSE268136	T cell CD8+	Cluster_B	0.359	14
+GSE268136	T cell CD8+	Cluster_C	0.4695	6
+GSE268136	cytotoxicity score	Cluster_A	0.7627	30
+GSE268136	cytotoxicity score	Cluster_B	0.7014	14
+GSE268136	cytotoxicity score	Cluster_C	0.8025	6
+GSE29683	B cell	invasive	5.5099	15
+GSE29683	B cell	non-invasive	5.5055	40
+GSE29683	Cancer associated fibroblast	invasive	6.1162	15
+GSE29683	Cancer associated fibroblast	non-invasive	6.0764	40
+GSE29683	Endothelial cell	invasive	5.4424	15
+GSE29683	Endothelial cell	non-invasive	5.5896	40
+GSE29683	Macrophage/Monocyte	invasive	4.8597	15
+GSE29683	Macrophage/Monocyte	non-invasive	5.3784	40
+GSE29683	Myeloid dendritic cell	invasive	4.5834	15
+GSE29683	Myeloid dendritic cell	non-invasive	4.5628	40
+GSE29683	NK cell	invasive	4.2365	15
+GSE29683	NK cell	non-invasive	4.21	40
+GSE29683	Neutrophil	invasive	5.5077	15
+GSE29683	Neutrophil	non-invasive	5.5219	40
+GSE29683	T cell	invasive	4.3043	15
+GSE29683	T cell	non-invasive	4.3802	40
+GSE29683	T cell CD8+	invasive	4.3608	15
+GSE29683	T cell CD8+	non-invasive	4.2424	40
+GSE29683	cytotoxicity score	invasive	4.1162	15
+GSE29683	cytotoxicity score	non-invasive	4.1985	40
+GSE59983	B cell	invasive	3.6998	26
+GSE59983	B cell	non-invasive	3.9364	46
+GSE59983	Cancer associated fibroblast	invasive	4.1959	26
+GSE59983	Cancer associated fibroblast	non-invasive	4.5065	46
+GSE59983	Endothelial cell	invasive	3.8617	26
+GSE59983	Endothelial cell	non-invasive	3.8539	46
+GSE59983	Macrophage/Monocyte	invasive	3.2887	26
+GSE59983	Macrophage/Monocyte	non-invasive	3.6153	46
+GSE59983	Myeloid dendritic cell	invasive	2.8344	26
+GSE59983	Myeloid dendritic cell	non-invasive	2.8384	46
+GSE59983	NK cell	invasive	3.0048	26
+GSE59983	NK cell	non-invasive	2.9408	46
+GSE59983	Neutrophil	invasive	3.5158	26
+GSE59983	Neutrophil	non-invasive	3.5933	46
+GSE59983	T cell	invasive	3.1339	26
+GSE59983	T cell	non-invasive	3.1181	46
+GSE59983	T cell CD8+	invasive	3.0325	26
+GSE59983	T cell CD8+	non-invasive	2.9859	46
+GSE59983	cytotoxicity score	invasive	2.8745	26
+GSE59983	cytotoxicity score	non-invasive	2.9107	46

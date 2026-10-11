@@ -1,0 +1,14 @@
+tumour_id	n_malignant	n_tumour_lineage	dataset	invasion_status
+11_2years_Retinoblastoma	681	1251	Collin2021	NA
+9_4months_Retinoblastoma	2965	6538	Collin2021	NA
+GSM7968797_S1_in1	2191	3897	Zhang2025	non-invasive
+GSM7968798_S2_in2	1215	5808	Zhang2025	non-invasive
+GSM7968799_S3_ex1	734	4591	Zhang2025	invasive
+GSM7968800_S4_ex2	3483	5003	Zhang2025	invasive
+RB01	2722	2977	Wu2022	NA
+RB02	734	1311	Wu2022	NA
+RB03	2200	3266	Wu2022	NA
+RB04	816	3089	Wu2022	NA
+RB05	1022	2835	Wu2022	NA
+RB06	2411	3206	Wu2022	NA
+RB07	808	3157	Wu2022	NA
