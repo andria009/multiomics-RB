@@ -12,6 +12,8 @@
 #   liu_expression_tests.tsv     genes and phenotype score vs high-risk histology and vs subtype
 #   liu_methylation_tests.tsv    CpG panel, Liu 9-CpG predictor and promoter methylation vs the same
 #   liu9_in_gse267015.tsv        Liu 9-CpG predictor applied to the discovery methylation cohort
+#   liu_marker_values.tsv        per-tumour standardised marker values with histology and subtype
+#   liu_power.tsv                power of the histology tests (Hanley-McNeil) for true AUCs 0.65-0.80
 #   figures/18_liu_histology
 #
 # This cohort was not used for any selection (genes, filters, CpG panel). Definitions fixed
@@ -59,6 +61,17 @@ hr <- function(ch_set) ifelse(!known, NA, (lab$optic_nerve %in% HR_STRICT_ON) | 
 lab$high_risk_strict <- hr(HR_STRICT_CH)
 lab$high_risk_broad  <- hr(HR_BROAD_CH)
 lab$untreated <- lab$chemotherapy %in% "no"
+# Revision: broad definition primary; sensitivity outcomes as copies of the labels set to NA outside
+# the stratum (untreated eyes; within each subtype)
+for (v in c("high_risk_broad", "high_risk_strict")) {
+  lab[[paste0(v, "_untreated")]] <- ifelse(lab$untreated, lab[[v]], NA)
+  for (k in 1:2) lab[[paste0(v, "_in_subtype", k)]] <- ifelse(lab$subtype %in% k, lab[[v]], NA)
+}
+HR_OUTCOMES <- c("high_risk_broad", "high_risk_strict", "high_risk_broad_untreated", "high_risk_strict_untreated",
+                 "high_risk_broad_in_subtype2", "high_risk_broad_in_subtype1",
+                 "high_risk_strict_in_subtype2", "high_risk_strict_in_subtype1")
+message("Treated before enucleation: ", sum(!lab$untreated), " (high risk broad ",
+        sum(!lab$untreated & lab$high_risk_broad %in% TRUE), ", strict ", sum(!lab$untreated & lab$high_risk_strict %in% TRUE), ")")
 message("Liu tumours with histology: ", sum(known), "; high risk strict ", sum(lab$high_risk_strict, na.rm = TRUE),
         ", broad ", sum(lab$high_risk_broad, na.rm = TRUE))
 print(table(strict = lab$high_risk_strict, subtype = lab$subtype, useNA = "ifany"))
@@ -126,6 +139,11 @@ Bv <- Bv[, okb, drop = FALSE]; btid <- btid[okb]
 Bv <- avg_by(Bv, btid)
 message("GSE58783: ", nrow(Bv), " CpGs x ", ncol(Bv), " tumours")
 
+# matrices for the multi-omics factor analysis (step 21): expression and the most variable CpGs
+save_rds(X, file.path(DIR_VAL, "liu_expression.rds"), "Liu expression (genes x tumours)")
+v_cpg <- apply(Bv, 1, stats::var, na.rm = TRUE)
+save_rds(Bv[head(order(v_cpg, decreasing = TRUE), 20000), , drop = FALSE], file.path(DIR_VAL, "liu_beta_top20k.rds"),
+         "Liu methylation, 20,000 most variable CpGs")
 lab$has_expression <- lab$tumour %in% colnames(X)
 lab$has_methylation <- lab$tumour %in% colnames(Bv)
 save_tsv(lab, file.path(DIR_VAL, "liu_samples.tsv"))
@@ -133,9 +151,11 @@ save_tsv(lab, file.path(DIR_VAL, "liu_samples.tsv"))
 # -----------------------------------------------------------------------------
 # 4. Tests
 # -----------------------------------------------------------------------------
+VALUES <- list()   # per-tumour standardised marker values (for the within-subtype figure)
 test_marker <- function(x, ids, name, layer) {
   d <- lab[match(ids, lab$tumour), ]; d$x <- as.numeric(scale(x))
-  dplyr::bind_rows(lapply(c("high_risk_strict", "high_risk_broad", "subtype2"), function(outcome) {
+  VALUES[[paste(layer, name)]] <<- data.frame(tumour = ids, marker = name, layer = layer, value = d$x)
+  dplyr::bind_rows(lapply(c(HR_OUTCOMES, "subtype2"), function(outcome) {
     y <- if (outcome == "subtype2") as.integer(d$subtype == 2) else as.integer(d[[outcome]])
     ok <- !is.na(y) & !is.na(d$x)
     if (sum(y[ok]) < 3 || sum(1 - y[ok]) < 3) return(NULL)
@@ -170,7 +190,15 @@ expr_tests <- dplyr::bind_rows(
     s <- if (pri$g_re[match(g, pri$gene)] < 0) -1 else 1    # oriented so that higher = more aggressive
     test_marker(s * Z[g, ], colnames(Z), g, "expression")
   })))
-expr_tests <- expr_tests |> dplyr::group_by(outcome) |> dplyr::mutate(padj = p.adjust(wilcox_p, "BH")) |> dplyr::ungroup()
+# BH within outcome and layer; the held-out subtype AUC is shown next to every histology result (an
+# odds ratio adjusted for subtype is not interpretable when the marker nearly separates subtype)
+add_cols <- function(tt) {
+  tt <- tt |> dplyr::group_by(outcome) |> dplyr::mutate(padj = p.adjust(wilcox_p, "BH")) |> dplyr::ungroup()
+  sa <- tt[tt$outcome == "subtype2", c("marker", "auc")]
+  tt$subtype_auc <- sa$auc[match(tt$marker, sa$marker)]
+  tt
+}
+expr_tests <- add_cols(expr_tests)
 save_tsv(expr_tests, file.path(DIR_VAL, "liu_expression_tests.tsv"))
 print(as.data.frame(expr_tests[expr_tests$marker == "phenotype score" | expr_tests$outcome == "high_risk_strict", ]))
 
@@ -204,6 +232,7 @@ meth_tests <- dplyr::bind_rows(
     s <- if (pri$g_re[match(g, pri$gene)] < 0) 1 else -1   # promoter methylation oriented: higher = more aggressive
     test_marker(s * colMeans(Bv[cg, , drop = FALSE], na.rm = TRUE), colnames(Bv), paste0(g, " promoter"), "methylation")
   })))
+meth_tests <- add_cols(meth_tests)
 save_tsv(meth_tests, file.path(DIR_VAL, "liu_methylation_tests.tsv"))
 print(as.data.frame(meth_tests[meth_tests$layer == "methylation" & !grepl("promoter", meth_tests$marker), ]))
 
@@ -227,11 +256,34 @@ message("GSE267015: Liu 9 CpGs present after filtering: ", sum(l9$`CpG position`
 fd <- dplyr::bind_rows(
   data.frame(tumour = colnames(Z), value = as.numeric(scale(score)), marker = "Expression phenotype score"),
   data.frame(tumour = colnames(Bv), value = as.numeric(scale(reg_score(Bv))), marker = "CpG panel score")) |>
-  dplyr::left_join(lab[, c("tumour", "high_risk_strict", "subtype")], by = "tumour") |>
-  dplyr::filter(!is.na(high_risk_strict))
-p <- ggplot2::ggplot(fd, ggplot2::aes(ifelse(high_risk_strict, "high risk", "other"), value, colour = factor(subtype))) +
+  dplyr::left_join(lab[, c("tumour", "high_risk_broad", "subtype")], by = "tumour") |>
+  dplyr::filter(!is.na(high_risk_broad))
+p <- ggplot2::ggplot(fd, ggplot2::aes(ifelse(high_risk_broad, "high risk", "other"), value, colour = factor(subtype))) +
   ggplot2::geom_boxplot(outlier.shape = NA, colour = "grey40") + ggplot2::geom_jitter(width = 0.15, size = 1.5) +
   ggplot2::facet_wrap(~ marker) + ggplot2::labs(x = NULL, y = "z-score", colour = "Liu subtype",
-                                                title = "Liu/Curie cohort (held out): markers by histological risk (strict)") + PLOT_THEME
+                                                title = "Liu/Curie cohort (held out): markers by histological risk (broad)") + PLOT_THEME
 save_plot(p, file.path(DIR_FIG, "18_liu_histology"), width = 8, height = 5)
+# -----------------------------------------------------------------------------
+# 5. Per-tumour marker values and power of the held-out histology tests (revision)
+# -----------------------------------------------------------------------------
+vals <- dplyr::bind_rows(VALUES) |>
+  dplyr::left_join(lab[, c("tumour", "subtype", "high_risk_broad", "high_risk_strict", "untreated")], by = "tumour")
+save_tsv(vals, file.path(DIR_VAL, "liu_marker_values.tsv"))
+# Hanley-McNeil SE of the AUC under the alternative; normal approximation; Bonferroni over the
+# number of markers tested in that layer
+hm_power <- function(A, n1, n0, alpha) {
+  q1 <- A / (2 - A); q2 <- 2 * A^2 / (1 + A)
+  se <- sqrt((A * (1 - A) + (n1 - 1) * (q1 - A^2) + (n0 - 1) * (q2 - A^2)) / (n1 * n0))
+  stats::pnorm((A - 0.5) / se - stats::qnorm(1 - alpha / 2))
+}
+stopifnot(abs(hm_power(0.70, 12, 32, 0.05) - 0.56) < 0.01)   # reviewer's value for 12 vs 32
+alltests <- dplyr::bind_rows(expr_tests, meth_tests)
+pw <- alltests |> dplyr::filter(outcome %in% c("high_risk_broad", "high_risk_strict")) |>
+  dplyr::group_by(layer, outcome) |>
+  dplyr::summarise(n_markers = dplyr::n(), n_pos = max(n_pos), n = max(n), .groups = "drop") |>
+  dplyr::mutate(n_neg = n - n_pos)
+pw <- dplyr::bind_rows(lapply(HR_POWER_AUC, function(A) dplyr::mutate(pw, true_auc = A,
+  power_alpha05 = hm_power(A, n_pos, n_neg, 0.05), power_bonferroni = hm_power(A, n_pos, n_neg, 0.05 / n_markers))))
+save_tsv(pw, file.path(DIR_VAL, "liu_power.tsv")); print(as.data.frame(pw))
+
 message("\n[18_liu_validation.R] Complete.")

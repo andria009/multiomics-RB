@@ -8,6 +8,7 @@
 #   cpg_panel_bootstrap.tsv  every candidate region's probability of entering the panel
 #   cpg_panel_cv.tsv         cross-validated performance (selection repeated inside each training fold)
 #   cpg_panel_scores.tsv     panel score of every tumour (paired and methylation-only)
+#   cpg_panel_sensitivity.tsv  panel CpGs under the step-14 sensitivity models
 #   figures/16_cpg_panel
 #
 # Rules (fixed before the results were seen):
@@ -142,15 +143,20 @@ cv <- dplyr::bind_rows(lapply(1:10, function(rep) {
     Rte <- region_matrix(cr[cr$region %in% pn, ], B[, te, drop = FALSE])
     pred[te] <- panel_score(Rte, pn, setNames(sign(s$slope), rownames(s)))
   }
-  data.frame(repeat_id = rep, title = ps$title, platform = ps$platform, score = ps$score, cv_panel_score = pred)
+  data.frame(repeat_id = rep, title = ps$title, platform = ps$platform, cluster = ps$cluster_ryl_et_al,
+             score = ps$score, cv_panel_score = pred)
 }))
 perf <- cv |> dplyr::group_by(repeat_id) |>
   dplyr::summarise(spearman_all = stats::cor(score, cv_panel_score, method = "spearman", use = "complete.obs"),
                    spearman_450K = stats::cor(score[platform == "450K"], cv_panel_score[platform == "450K"],
                                               method = "spearman", use = "complete.obs"),
                    spearman_EPIC = stats::cor(score[platform == "EPIC"], cv_panel_score[platform == "EPIC"],
-                                              method = "spearman", use = "complete.obs"), .groups = "drop")
+                                              method = "spearman", use = "complete.obs"),
+                   spearman_clusterA = stats::cor(score[cluster == "A"], cv_panel_score[cluster == "A"],
+                                                  method = "spearman", use = "complete.obs"), .groups = "drop")
 save_tsv(perf, file.path(DIR_METH, "cpg_panel_cv.tsv"))
+message("Cross-validated Spearman rho within Ryl cluster A (n = ", sum(ps$cluster_ryl_et_al == "A"), "): median ",
+        round(stats::median(perf$spearman_clusterA), 2), " (range ", paste(round(range(perf$spearman_clusterA), 2), collapse = " to "), ")")
 message("Cross-validated Spearman rho, held-out panel score vs phenotype score: median ",
         round(stats::median(perf$spearman_all), 2), " (range ", paste(round(range(perf$spearman_all), 2), collapse = " to "), ")")
 
@@ -163,6 +169,22 @@ sc_all <- data.frame(title = colnames(beta), panel_score = panel_score(Rall, PAN
   dplyr::left_join(smp[, c("title", "platform", "cluster_ryl_et_al", "paired_rna")], by = "title") |>
   dplyr::left_join(ps[, c("title", "score")], by = "title")
 save_tsv(sc_all, file.path(DIR_METH, "cpg_panel_scores.tsv"))
+inA <- !is.na(sc_all$score) & sc_all$cluster_ryl_et_al == "A"
+message("In-sample Spearman rho within Ryl cluster A (n = ", sum(inA), "): ",
+        round(stats::cor(sc_all$panel_score[inA], sc_all$score[inA], method = "spearman"), 2))
+
+# Panel CpGs under the step-14 sensitivity models (platform, composition, cluster)
+sc <- data.table::fread(file.path(DIR_METH, "dmp_sensitivity_cpg.tsv.gz"), data.table = FALSE)
+pc <- data.frame(region = rep(panel$region, lengths(strsplit(panel$cpgs, ";"))), cpg = unlist(strsplit(panel$cpgs, ";")))
+pc <- dplyr::left_join(pc, sc, by = "cpg")
+stopifnot(!anyNA(pc$main_delta_beta))
+save_tsv(pc, file.path(DIR_METH, "cpg_panel_sensitivity.tsv"))
+pcols <- grep("_padj$", names(pc), value = TRUE)
+message("Panel CpGs still BH < 0.05 (same sign) under each sensitivity model: ",
+        paste(sub("_padj$", "", pcols), vapply(pcols, function(cn) {
+          dcol <- sub("_padj$", "_delta_beta", cn)
+          sum(pc[[cn]] < 0.05 & sign(pc[[dcol]]) == sign(pc$main_delta_beta), na.rm = TRUE)
+        }, numeric(1)), sep = " ", collapse = "; "), " (of ", nrow(pc), ")")
 print(sc_all |> dplyr::group_by(cluster_ryl_et_al, has_score = !is.na(score)) |>
         dplyr::summarise(n = dplyr::n(), median_panel = stats::median(panel_score), .groups = "drop"))
 

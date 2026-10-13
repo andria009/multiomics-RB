@@ -34,5 +34,8 @@ run 15_methylation_expression.R
 run 16_cpg_marker_panel.R
 run 17_multiomic_priority.R
 run 18_liu_validation.R
-run 19_supporting_info.R
+run 20_cnv_from_methylation.R
+run 22_cnv_liu_crosscheck.R
+run 21_mofa_integration.R
+run 19_supporting_info.R   # last: collects the S tables
 echo "=== $(date '+%F %T')  done" | tee -a "$LOG"

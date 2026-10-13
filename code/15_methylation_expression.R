@@ -111,6 +111,24 @@ enr <- dplyr::bind_rows(lapply(list(all = bg, up = bg[!bg$candidate | bg$gene %i
              n_other = sum(!d$candidate), pct_coupled_other = 100 * mean(d$prom_coupled[!d$candidate]),
              odds_ratio = unname(ft$estimate), p = ft$p.value)
 }), .id = "candidate_set")
+# Candidates are selected for large between-tumour differences, so they vary more in these tumours,
+# which by itself raises the power of any correlation test. Adjusted estimates (revision):
+#   or_adj_sd  logistic regression: coupled ~ candidate + log(SD of expression) + mean expression
+#   or_mh      Mantel-Haenszel odds ratio stratified by deciles of the expression SD
+bg$sd_expr <- apply(E[bg$gene, , drop = FALSE], 1, stats::sd)
+bg$mean_expr <- rowMeans(E[bg$gene, , drop = FALSE])
+bg$sd_decile <- cut(bg$sd_expr, unique(stats::quantile(bg$sd_expr, 0:10 / 10)), include.lowest = TRUE)
+adj <- dplyr::bind_rows(lapply(list(all = bg, up = bg[!bg$candidate | bg$gene %in% cand$gene[cand$g_re > 0], ],
+                                    down = bg[!bg$candidate | bg$gene %in% cand$gene[cand$g_re < 0], ]), function(d) {
+  co <- summary(stats::glm(prom_coupled ~ candidate + log(sd_expr) + mean_expr, family = binomial, data = d))$coefficients
+  mh <- stats::mantelhaen.test(table(factor(d$candidate, c(TRUE, FALSE)), factor(d$prom_coupled, c(TRUE, FALSE)), d$sd_decile))
+  data.frame(median_sd_candidates = stats::median(d$sd_expr[d$candidate]), median_sd_other = stats::median(d$sd_expr[!d$candidate]),
+             or_adj_sd = exp(co["candidateTRUE", 1]), or_adj_sd_lo = exp(co["candidateTRUE", 1] - 1.96 * co["candidateTRUE", 2]),
+             or_adj_sd_hi = exp(co["candidateTRUE", 1] + 1.96 * co["candidateTRUE", 2]), p_adj_sd = co["candidateTRUE", 4],
+             or_per_log_sd = exp(co["log(sd_expr)", 1]),
+             or_mh = unname(mh$estimate), or_mh_lo = mh$conf.int[1], or_mh_hi = mh$conf.int[2], p_mh = mh$p.value)
+}), .id = "candidate_set")
+enr <- dplyr::left_join(enr, adj, by = "candidate_set")
 save_tsv(enr, file.path(DIR_MO, "methylation_support_enrichment.tsv")); print(enr)
 
 # -----------------------------------------------------------------------------

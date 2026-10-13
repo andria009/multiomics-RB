@@ -17,6 +17,9 @@ DMRcate	3.8.0
 IlluminaHumanMethylation450kanno.ilmn12.hg19	0.6.1
 minfi	1.58.0
 data.table	1.18.6.1
+conumee	1.46.0
+CopyNeutralIMA	1.30.0
+MOFA2	1.22.1
 readxl	1.5.0.1
 openxlsx	4.2.9
 dplyr	1.2.1

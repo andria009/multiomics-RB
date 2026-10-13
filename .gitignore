@@ -22,3 +22,8 @@ review/
 # Large methylation intermediates (recreated by steps 13-14)
 results/08_methylation/*.rds
 results/08_methylation/*.tsv.gz
+
+# Copy-number cache and large intermediates (recreated by steps 18, 20, 21)
+results/11_cnv/cache/
+results/10_liu_validation/*.rds
+results/12_mofa/*.hdf5

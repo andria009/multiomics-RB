@@ -1,6 +1,6 @@
 # =============================================================================
 # Step 19 — Supporting Information tables and session information
-# Output: results/supporting_info/S1-S9 *.xlsx, sessionInfo.txt
+# Output: results/supporting_info/S1-S14 *.xlsx, sessionInfo.txt, package_versions.tsv
 # =============================================================================
 
 source(here::here("code", "R", "config.R"))
@@ -56,10 +56,13 @@ tables <- list(
     samples = rd(DIR_METH, "meth_samples.tsv"),
     dmp_significant = { d <- data.table::fread(file.path(DIR_METH, "dmp_phenotype.tsv.gz"), data.table = FALSE); d[d$dmp, ] },
     dmp_context = rd(DIR_METH, "dmp_context.tsv"),
+    dmp_sensitivity = rd(DIR_METH, "dmp_sensitivity.tsv"),
     dmr = if (file.exists(file.path(DIR_METH, "dmr_phenotype.tsv"))) rd(DIR_METH, "dmr_phenotype.tsv") else data.frame(note = "DMRcate not run"),
+    dmr_composition = if (file.exists(file.path(DIR_METH, "dmr_phenotype_composition.tsv"))) rd(DIR_METH, "dmr_phenotype_composition.tsv") else data.frame(note = "DMRcate not run"),
     cpg_regions = rd(DIR_METH, "cpg_regions.tsv"),
     cpg_panel = rd(DIR_METH, "cpg_panel.tsv"),
     cpg_panel_cv = rd(DIR_METH, "cpg_panel_cv.tsv"),
+    cpg_panel_sensitivity = rd(DIR_METH, "cpg_panel_sensitivity.tsv"),
     cpg_panel_scores = rd(DIR_METH, "cpg_panel_scores.tsv")),
   S11_Table_multiomic = list(
     candidate_methylation = rd(DIR_MO, "candidate_methylation_support.tsv"),
@@ -71,7 +74,27 @@ tables <- list(
     subtype_vs_histology = rd(DIR_VAL, "liu_subtype_vs_histology.tsv"),
     expression_tests = rd(DIR_VAL, "liu_expression_tests.tsv"),
     methylation_tests = rd(DIR_VAL, "liu_methylation_tests.tsv"),
+    power = rd(DIR_VAL, "liu_power.tsv"),
+    marker_values = rd(DIR_VAL, "liu_marker_values.tsv"),
     liu9_in_gse267015 = rd(DIR_VAL, "liu9_in_gse267015.tsv")),
+  S13_Table_copy_number = list(
+    samples = rd(DIR_CNV, "cnv_samples.tsv"),
+    arm_frequency = rd(DIR_CNV, "cnv_arm_frequency.tsv"),
+    tests_discovery = rd(DIR_CNV, "cnv_tests_discovery.tsv"),
+    tests_liu = rd(DIR_CNV, "cnv_tests_liu.tsv"),
+    liu_bac_cgh = rd(DIR_CNV, "cnv_liu_bac_samples.tsv"),
+    liu_crosscheck = rd(DIR_CNV, "cnv_liu_crosscheck.tsv")),
+  S14_Table_mofa = list(
+    variance_explained = rd(DIR_MOFA, "mofa_variance_explained.tsv"),
+    main_factor_by_view = rd(DIR_MOFA, "mofa_main_factor_by_view.tsv"),
+    factor_correlation = rd(DIR_MOFA, "mofa_factor_correlation.tsv"),
+    factors = rd(DIR_MOFA, "mofa_factors.tsv"),
+    factor_tests = rd(DIR_MOFA, "mofa_factor_tests.tsv"),
+    top_weights = rd(DIR_MOFA, "mofa_top_weights.tsv"),
+    shortlist_weights = rd(DIR_MOFA, "mofa_shortlist_weights.tsv"),
+    stability = rd(DIR_MOFA, "mofa_stability.tsv"),
+    cross_cohort = rd(DIR_MOFA, "mofa_cross_cohort.tsv"),
+    rna_weights_shared = rd(DIR_MOFA, "mofa_rna_weights_shared.tsv")),
   S9_Table_classifier = list(
     lasso_stability = rd(DIR_INV, "lasso_stability.tsv"),
     loco_auc = rd(DIR_INV, "loco_auc.tsv"),
@@ -85,7 +108,7 @@ writeLines(capture.output(sessionInfo()), file.path(DIR_SI, "sessionInfo.txt"))
 # Versions of every package the analysis uses (quoted in Methods by the manuscript build)
 pkgs <- c("GEOquery", "Biobase", "limma", "preprocessCore", "AnnotationDbi", "org.Hs.eg.db",
           "glmnet", "pROC", "Seurat", "SeuratObject", "harmony", "copykat",
-          "immunedeconv", "DMRcate", "IlluminaHumanMethylation450kanno.ilmn12.hg19", "minfi", "data.table",
+          "immunedeconv", "DMRcate", "IlluminaHumanMethylation450kanno.ilmn12.hg19", "minfi", "data.table", "conumee", "CopyNeutralIMA", "MOFA2",
           "readxl", "openxlsx", "dplyr", "ggplot2", "Matrix")
 ver <- data.frame(package = pkgs, version = vapply(pkgs, function(p)
   tryCatch(as.character(utils::packageVersion(p)), error = function(e) NA_character_), character(1)))

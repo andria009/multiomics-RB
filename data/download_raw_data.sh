@@ -34,13 +34,27 @@ get rnaseq GSE268136 matrix GSE268136-GPL24676_series_matrix.txt.gz
 get methylation GSE267015 suppl  GSE267015_ryl_et_al_beta_matrix_tumors.txt.gz
 get methylation GSE267015 matrix GSE267015-GPL13534_series_matrix.txt.gz
 get methylation GSE267015 matrix GSE267015-GPL21145_series_matrix.txt.gz
+# raw IDAT files (copy-number analysis, step 20); extracted by step 20
+get methylation GSE267015 suppl  GSE267015_RAW.tar
 
-# Validation cohort (Liu et al. 2021, Institut Curie; SuperSeries GSE58785): expression
+# Validation cohort (Liu et al. 2021; SuperSeries GSE58785): expression
 # (HG-U133 Plus 2.0, Brainarray Entrez-gene CDF) and 450K methylation (processed betas);
 # histology and subtypes come from Liu et al. Supplementary Data 1 (data/supplementary)
 get liu GSE58780 matrix GSE58780_series_matrix.txt.gz
 get liu GSE58783 matrix GSE58783_series_matrix.txt.gz
 get liu GSE58783 suppl  GSE58783_processed_data_i_methylation_retino_all_samples.csv.gz
+# raw 450K data (copy-number analysis, step 20): IDAT archive and the raw signal table
+get liu GSE58783 suppl  GSE58783_RAW.tar
+get liu GSE58783 suppl  GSE58783_Raw_data_i_methylation_retino_all_samples.csv.gz
+# independent BAC array-CGH of the same tumours (step 22) and the BAC positions
+get liu GSE58784 matrix GSE58784-GPL18861_series_matrix.txt.gz
+get liu GSE58784 matrix GSE58784-GPL29807_series_matrix.txt.gz
+for p in GPL18861 GPL29807; do
+  f="raw/liu/${p}_family.soft.gz"
+  [ -f "$f" ] && gzip -t "$f" 2>/dev/null && { echo "exists: $f"; continue; }
+  echo "downloading ${p}_family.soft.gz"
+  curl -fL --retry 3 -o "$f.part" "https://ftp.ncbi.nlm.nih.gov/geo/platforms/${p:0:5}nnn/$p/soft/${p}_family.soft.gz" && mv "$f.part" "$f"
+done
 
 # Single-cell RNA-seq (10x MEX files inside RAW.tar)
 for g in GSE168434 GSE249995 GSE166173; do

@@ -1,5 +1,5 @@
 # =============================================================================
-# config.R — paths and parameters (transcriptome steps 01-11, methylation steps 13-17, validation step 18)
+# config.R — paths and parameters (transcriptome 01-11, methylation 13-17, validation 18, copy number 20, MOFA 21)
 # Sourced at the top of every script:  source(here::here("code", "R", "config.R"))
 # The project root is marked by the empty file `.here`.
 # =============================================================================
@@ -29,6 +29,8 @@ DIR_METH <- file.path(DIR_RES, "08_methylation")     # steps 13-14, 16: methylat
 DIR_MO   <- file.path(DIR_RES, "09_multiomic")       # steps 15, 17: methylation-expression integration, priority
 DIR_VAL  <- file.path(DIR_RES, "10_liu_validation")  # step 18: held-out Liu/Curie cohort, histology
 DIR_SI   <- file.path(DIR_RES, "supporting_info")    # step 19: S tables + session info
+DIR_CNV  <- file.path(DIR_RES, "11_cnv")             # step 20: copy number from the methylation arrays
+DIR_MOFA <- file.path(DIR_RES, "12_mofa")            # step 21: multi-omics factor analysis
 
 # Sensitivity analysis: INVASION_EXCLUDE=GSE29683 drops that dataset from the
 # invasion meta-analysis and training (steps 04-05) and writes to separate
@@ -39,7 +41,7 @@ if (length(INVASION_EXCLUDE) > 0) {
   DIR_FIG <- file.path(DIR_FIG, basename(DIR_INV))
 }
 
-for (d in c(DIR_BULK, DIR_INV, DIR_SC, DIR_IMM, DIR_INT, DIR_SUB, DIR_PRI, DIR_METH, DIR_MO, DIR_VAL, DIR_SI, DIR_FIG)) {
+for (d in c(DIR_BULK, DIR_INV, DIR_SC, DIR_IMM, DIR_INT, DIR_SUB, DIR_PRI, DIR_METH, DIR_MO, DIR_VAL, DIR_SI, DIR_CNV, DIR_MOFA, DIR_FIG)) {
   if (!dir.exists(d)) dir.create(d, recursive = TRUE)
 }
 
@@ -114,11 +116,26 @@ CPG_MIN_RANGE     <- 0.3    # CpG panel: beta range (10th-90th percentile) acros
 CPG_MERGE_BP      <- 1000   # CpGs within this distance and correlated are one region
 CPG_MERGE_R       <- 0.8
 
-# Validation cohort (step 18; definitions fixed before the cohort was analysed)
+# Validation cohort (step 18). Both definitions were fixed before the cohort was analysed; in the
+# revision the broad definition was made primary because, read with the IRSWG consensus, "extended"
+# choroidal invasion corresponds to massive choroidal invasion (a standard high-risk feature).
 LIU_SUPP_FILE  <- "41467_2021_25792_MOESM4_ESM.xlsx"   # Liu et al. 2021 Supplementary Data 1 (Table S1)
 HR_STRICT_ON   <- "postlaminar"                          # optic nerve: high risk
-HR_STRICT_CH   <- c("choroid_deep", "choroid_extended_and_sclera")   # choroid/sclera: high risk (strict)
-HR_BROAD_CH    <- c(HR_STRICT_CH, "choroid_extended")    # sensitivity definition
+HR_STRICT_CH   <- c("choroid_deep", "choroid_extended_and_sclera")   # choroid/sclera: strict (secondary)
+HR_BROAD_CH    <- c(HR_STRICT_CH, "choroid_extended")    # broad (primary since the revision)
+HR_POWER_AUC   <- c(0.65, 0.70, 0.75, 0.80)              # true AUCs for the power table (step 18)
+
+# Copy number from methylation arrays (step 20; conumee with CopyNeutralIMA normal references)
+CNV_ARM_THR   <- 0.10   # arm called gained / lost when its length-weighted segment mean is beyond +/- this (log2 ratio)
+CNV_SEG_THR   <- 0.15   # segments beyond +/- this count towards the fraction of genome altered (FGA)
+CNV_AMP_THR   <- 0.50   # focal amplification call for MYCN (mean of overlapping bins)
+CNV_MAX_NOISE <- 1.00   # arrays with conumee fit noise above this are excluded (QC)
+CNV_KEY_ARMS  <- c("1q", "2p", "6p", "16q")   # recurrent RB copy-number changes
+# Multi-omics factor analysis (step 21; MOFA2)
+MOFA_N_GENES   <- 2000  # most variable expressed genes (RNA view)
+MOFA_N_CPGS    <- 5000  # most variable CpGs (methylation view)
+MOFA_N_FACTORS <- 10
+MOFA_SEEDS     <- 1:5   # extra seeds for the stability check of the main factor
 
 # -----------------------------------------------------------------------------
 # Reproducibility
