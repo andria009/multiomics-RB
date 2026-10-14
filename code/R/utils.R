@@ -337,6 +337,18 @@ stopifnot(rra_rho(matrix(c(0.01, 0.02, 0.9, 0.95), 2, byrow = TRUE,
 # the gene is removed from its own set (exact, no re-scoring needed).
 # -----------------------------------------------------------------------------
 zscore_rows <- function(mat) t(scale(t(mat)))
+
+# Per-sample proxy scores (round-2 revision): mean row-z of each gene set (>= 2 genes present), and a
+# sex score (female minus male genes; > 0 = female). E: genes x samples, log scale.
+proxy_scores <- function(E, sets, female = SEX_FEMALE_GENES, male = SEX_MALE_GENES) {
+  z <- function(g) { g <- intersect(g, rownames(E)); if (length(g) < 2) return(rep(NA_real_, ncol(E)))
+    colMeans(zscore_rows(E[g, , drop = FALSE]), na.rm = TRUE) }
+  out <- vapply(sets, z, numeric(ncol(E)))
+  if (is.null(dim(out))) out <- matrix(out, nrow = ncol(E), dimnames = list(colnames(E), names(sets)))
+  fem <- intersect(female, rownames(E)); mal <- intersect(male, rownames(E))
+  sex <- if (length(fem) && length(mal)) colMeans(E[fem, , drop = FALSE]) - colMeans(E[mal, , drop = FALSE]) else NA_real_
+  data.frame(sample = colnames(E), out, sex_score = sex, row.names = NULL, check.names = FALSE)
+}
 score_updown <- function(Z, up, down) {
   up <- intersect(up, rownames(Z)); down <- intersect(down, rownames(Z))
   colMeans(Z[up, , drop = FALSE]) - colMeans(Z[down, , drop = FALSE])

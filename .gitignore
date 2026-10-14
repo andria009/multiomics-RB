@@ -9,7 +9,8 @@ data/raw/
 .here
 
 # Run logs and per-dataset scRNA caches (large; recreated by code/run_all.sh)
-logs/
+logs/*
+!logs/run_all.log
 results/03_scrna/*.rds
 manuscript/
 results/04_immune/cibersortx_input/

@@ -4,7 +4,7 @@ Analysis code and results for:
 
 > Amiruddin PO, Mazaya M, Arisal A, Irfani I, Kartiwa A, Kartasasmita AS. Multi-omic markers of retinoblastoma de-differentiation and their association with histological high-risk features in a held-out cohort. (Under review.)
 
-A single scripted run (`bash code/run_all.sh`) reproduces every result table of the paper from public data. The results below are from the final run of 13 October 2026.
+A single scripted run (`bash code/run_all.sh`) reproduces every result table of the paper from public data. The results below are from the run of 14 October 2026 (second revision); its log is `logs/run_all.log`.
 
 ## Contents
 
@@ -82,7 +82,7 @@ Genes passing all filters were ranked by the lower 95% confidence bound of |g|, 
 **Methylation discovery.** The Ryl methylation clusters were derived from these methylation data, so comparing clusters within them would be circular. The phenotype was therefore an expression phenotype score computed from each tumour's paired RNA-seq, with gene sets taken from the other contrasts only.
 
 - **Associated CpGs and regions:** DMPs (limma on M-values, platform-adjusted) and DMRs (DMRcate) [16–18].
-- **Sensitivity analyses:** each array type alone, adjustment for cell composition, cluster A alone, and adjustment for cluster.
+- **Sensitivity analyses:** each array type alone; cell composition estimated from RNA-seq, from the methylation data (EpiDISH) and reference-free (surrogate variables); β recomputed from the IDATs (noob); cluster A alone; adjustment for cluster; a check for the EPIC copy-number artefact.
 - **Promoter methylation vs expression:** tested for each candidate gene, with enrichment adjusted for expression variance.
 - **CpG panel:** 10 regions, cross-validated with selection repeated inside each fold.
 
@@ -122,7 +122,9 @@ For each marker we report AUCs for subtype and for high risk, within-subtype AUC
 | 18 | `18_liu_validation.R` | Held-out cohort: all markers vs high-risk histology (broad, strict, untreated, within subtype) and vs subtype; power | `results/10_liu_validation/` |
 | 20 | `20_cnv_from_methylation.R` | Copy number from the methylation IDATs (conumee): arm values, fraction of genome altered, *MYCN*/*RB1*; tests vs phenotype score, subtype and histology | `results/11_cnv/` |
 | 22 | `22_cnv_liu_crosscheck.R` | Checks the 450K-derived copy number against Liu et al.'s independent BAC array-CGH of the same tumours (GSE58784) | `results/11_cnv/` |
-| 21 | `21_mofa_integration.R` | MOFA2 on expression, methylation and copy number, per cohort; variance explained, factor tests, cross-cohort weights, seed stability | `results/12_mofa/` |
+| 21 | `21_mofa_integration.R` | MOFA2 on expression, methylation and copy number, per cohort; variance explained, factor tests, cross-cohort weights, seed stability; every factor characterised (composition, sex, RNA-quality proxies) | `results/12_mofa/` |
+| 23 | `23_methylation_sensitivity_r2.R` | Methylation-based composition (EpiDISH, surrogate variables), noob-recomputed β, EPIC artefact check; effect-size changes | `results/08_methylation/` |
+| 24 | `24_within_subtype_exploratory.R` | Exploratory: within-subtype AUCs side by side, subtype-boundary (non-monotonic) tests, composition within subtype 2 | `results/10_liu_validation/` |
 | 19 | `19_supporting_info.R` | S1–S14 Tables, package versions, session info (run last) | `results/supporting_info/` |
 
 There is no step 12. `00_scout_methylation_cohorts.R` was a one-off inspection of GSE57362 and GSE58783 and is not part of the pipeline.
@@ -179,15 +181,18 @@ All ten shortlisted genes agreed in sign in all five contrasts, and their HKSJ i
 
 In 47 paired tumours, 19,836 CpGs were associated with the phenotype score: 4,491 had higher and 15,345 lower methylation in more aggressive tumours. DMRcate found 4,543 regions. More de-differentiated tumours mostly had lower methylation outside CpG islands.
 
-| Sensitivity model | Tumours | Associated CpGs | Main associations reproduced |
-|---|---|---|---|
-| 450K arrays only | 20 | 5,232 | 77% |
-| EPIC arrays only | 27 | 6,092 | 94% |
-| Adjusted for cell composition | 47 | 42,471 | 90% |
-| Ryl cluster A only | 29 | 4,455 | 73% |
-| Adjusted for Ryl cluster | 47 | 1,646 | 67% |
+| Sensitivity model | Tumours | Associated CpGs | Main associations reproduced | Effect size vs main |
+|---|---|---|---|---|
+| 450K arrays only | 20 | 5,232 | 77% | 0.92 |
+| EPIC arrays only | 27 | 6,092 | 94% | 1.05 |
+| Composition from RNA-seq | 47 | 42,471 | 90% | 1.43 (inflated) |
+| Composition from methylation (EpiDISH) | 47 | 5,862 | 72% | 0.75 |
+| Surrogate variables (reference-free) | 47 | 4,731 | 71% | 0.61 |
+| β recomputed from IDATs (noob) | 47 | 20,456 | 100% | 1.04 |
+| Ryl cluster A only | 29 | 4,455 | 73% | 0.61 |
+| Adjusted for Ryl cluster | 47 | 1,646 | 67% | 0.73 |
 
-The lower-methylation signal is therefore continuous within a methylation cluster and is not explained by array type or cell composition. The smaller higher-methylation signal mainly reflects the difference between clusters.
+The lower-methylation signal is continuous within a methylation cluster and is not explained by array type or by how β values were processed; the EPIC copy-number artefact did not reach the β values. Composition adjustment based on the methylation data shrank the effects by 25–40% without abolishing them; RNA-based adjustment inflated them (collinear covariates). The smaller higher-methylation signal mainly reflects the difference between clusters.
 
 Promoter methylation was coupled to expression more often for candidate genes than for other genes after adjustment for expression variance (odds ratio 1.78, 95% CI 1.42–2.23). This held only for genes higher in aggressive tumours (2.80; for genes lower in aggressive tumours, 0.96). None of the ten shortlisted genes had methylation support.
 
@@ -208,7 +213,7 @@ The 10-CpG panel tracked the phenotype score in cross-validation (median ρ 0.71
 
 The 450K arrays showed the recurrent RB changes: in the Liu cohort, 1q gain in 52%, 6p gain in 55%, 2p gain in 18% and 16q loss in 53%. In the 20 discovery tumours, the fraction of genome altered rose with the phenotype score (ρ = 0.44, p = 0.055), as did 1q gain (ρ = 0.48), and 16q loss deepened (ρ = −0.43). In 59 Liu tumours, these calls agreed with Liu et al.'s independent BAC array-CGH (GSE58784): ρ 0.92 for 1q, 0.82 for 2p, 0.93 for 6p, 0.80 for 16q and 0.79 for *MYCN*; the methylation-array calls are conservative (fewer low-level gains).
 
-In the Liu cohort, one MOFA factor was shared by all three layers (20% of expression, 8% of methylation and 0.7% of copy-number variance). It correlated with the phenotype score (ρ = 0.91) and the fraction of genome altered (ρ = 0.62) and separated the subtypes completely (AUC 1.00). Its gene weights agreed with those of the discovery cohort's main expression factor (ρ = 0.90 over 815 genes); *SSTR2*, *EBF3* and *BCL11A* were in the top 5% of weights in both. The de-differentiation axis is therefore a coordinated multi-omic state.
+In the Liu cohort, one MOFA factor was shared by all three layers (20% of expression, 15% of methylation and 1.5% of copy-number variance). It correlated with the phenotype score (ρ = 0.90) and the fraction of genome altered (ρ = 0.63) and separated the subtypes completely (AUC 1.00). Its gene weights agreed with those of the discovery cohort's main expression factor (ρ = 0.90 over 815 genes); *SSTR2*, *EBF3* and *BCL11A* were in the top 5% of weights in both. The de-differentiation axis is therefore a coordinated multi-omic state. The largest other factors measure tumour purity and residual retina (discovery F1: Müller-glia score ρ −0.88). In the first revision a Liu factor was patient sex, because sex-chromosome CpGs had not been filtered; this is corrected.
 
 ### 5. Held-out validation against histology and subtype
 
@@ -227,13 +232,13 @@ In the Liu cohort, one MOFA factor was shared by all three layers (20% of expres
 | CpG panel | 1.00 | 0.56 (0.40–0.71) | 0.57 (0.41–0.74) |
 | Liu 9-CpG predictor | 1.00 | 0.59 (0.44–0.75) | 0.58 (0.41–0.74) |
 | Fraction of genome altered | 0.90 | 0.64 (0.49–0.80) | 0.58 (0.40–0.76) |
-| MOFA joint factor | 1.00 | 0.56 (0.41–0.71) | 0.59 (0.44–0.74) |
+| MOFA joint factor | 1.00 | 0.57 (0.42–0.72) | 0.60 (0.44–0.75) |
 
-The markers separated the published subtypes almost perfectly but separated high-risk histology poorly. For the broad definition, AUCs were 0.43–0.63 for the 22 expression markers, 0.38–0.62 for the 24 methylation markers and 0.41–0.64 for the seven copy-number markers. No test was significant after correction, and no upper 95% limit exceeded 0.80.
+The markers separated the published subtypes almost perfectly but separated high-risk histology poorly. For the broad (primary) definition, AUCs were 0.38–0.64 over all layers, with upper 95% limits up to 0.80; for the strict definition, specified first, 0.29–0.71, with upper limits up to 0.89. No test was significant after correction.
 
-After multiplicity correction, the cohort had at least 90% power to detect an AUC of 0.80 but only 28–35% for 0.70. Strong associations with high-risk histology are therefore unlikely, but moderate ones cannot be excluded.
+After multiplicity correction, the cohort had about 90% power to detect an AUC of 0.80 but only 28–35% for 0.70. Strong positive associations are therefore unlikely under the broad definition, but moderate associations, strong associations under the strict definition, and inverse associations cannot be excluded.
 
-High-risk features were somewhat more frequent in subtype 2 than in subtype 1 (broad, 51% vs 33%; odds ratio 2.06, 95% CI 0.76–5.81). Within subtypes the estimates were imprecise and inconsistent (S10 Fig below).
+High-risk features were somewhat more frequent in subtype 2 than in subtype 1 (broad, 51% vs 33%; odds ratio 2.06, 95% CI 0.76–5.81). Within subtypes the markers pointed in opposite directions: higher in high-risk tumours of subtype 1 and lower in those of subtype 2 (29 of 48 markers, against 4 the other way). An exploratory test of the idea that high-risk tumours lie near the subtype boundary gave weak support (*TFF1*, *EBF3*) that did not survive correction; composition did not explain the pattern. An FFPE study should pre-specify a non-monotonic test (S10 Fig below).
 
 ![Within subtype](docs/figures/S10_Fig.png)
 
@@ -243,7 +248,7 @@ High-risk features were somewhat more frequent in subtype 2 than in subtype 1 (b
 
 | Priority | Marker | Role | Assay on FFPE tissue |
 |---|---|---|---|
-| 1 | Liu 9-CpG predictor (or the 10-CpG panel) | Subtype, needed to interpret any histology association | Pyrosequencing |
+| 1 | Liu 9-CpG predictor | Subtype, needed to interpret any histology association | Pyrosequencing |
 | 1 | TFF1; ARR3, CRX | Subtype 2 and cone differentiation | Immunohistochemistry |
 | 1 | pRB | Identifies *RB1*-wild-type, *MYCN*-amplified tumours | Immunohistochemistry |
 | 2 | *DNM3*, *MYLK* | Low-prior hypotheses for a within-subtype effect | RNA (RT-qPCR or NanoString) |
@@ -258,7 +263,7 @@ Only six of 195 tumours in the discovery contrasts had a histology-based label, 
 
 The held-out cohort had 44 tumours with both histology and expression data and 54 with histology and methylation data. Its histology was reported by category. The broad definition was made primary at revision, after the strict results had been seen.
 
-The methylation analysis used submitter-processed β values of two array types rather than reprocessed raw files. Copy number is relative to tumour purity; the EPIC arrays were excluded for a bias found after the first run, leaving only 20 discovery tumours (4 of them cluster B/C) with copy number. Malignant-cell calls from single-cell data are uncertain, and the CopyKAT cross-check varies between runs (8–12 of 13 tumours separated; 8 in the final run, κ 0.14). The shortlists do not depend on it.
+The methylation analysis used submitter-processed β values of two array types (recomputing them from the IDATs gave the same result); composition estimates from RNA-seq and methylation are both collinear with the phenotype score, so the tumour-intrinsic share of the signal is uncertain. The within-subtype analyses were added after the results had been seen and are exploratory. Copy number is relative to tumour purity; the EPIC arrays were excluded for a bias found after the first run, leaving only 20 discovery tumours (4 of them cluster B/C) with copy number. Malignant-cell calls from single-cell data are uncertain, and the CopyKAT cross-check varies between runs (8–11 of 13 tumours separated over five seeds; κ 0.08–0.19). The shortlists do not depend on it.
 
 Copy number and methylation come from the same arrays, so the two layers are not technically independent; against Liu et al.'s array-CGH, the methylation-array calls were accurate but conservative. Exome mutation calls exist for most Liu tumours but were not integrated (median two mutations per tumour, few recurrent genes), and no protein data were available. A search of GEO, ArrayExpress, PRIDE, EGA and PubMed (October 2026) found no other cohort with per-tumour high-risk histology and tumour omics large enough for a test.
 
@@ -274,7 +279,7 @@ install.packages(c("BiocManager", "remotes", "here", "dplyr", "tidyr", "tibble",
                    "Matrix", "Seurat", "harmony"))
 BiocManager::install(c("GEOquery", "Biobase", "limma", "preprocessCore", "AnnotationDbi", "org.Hs.eg.db",
                        "ComplexHeatmap", "minfi", "DMRcate", "IlluminaHumanMethylation450kanno.ilmn12.hg19",
-                       "conumee", "CopyNeutralIMA", "MOFA2"))
+                       "conumee", "CopyNeutralIMA", "MOFA2", "EpiDISH", "sva"))
 remotes::install_github(c("navinlabcode/copykat", "omnideconv/immunedeconv"))
 ```
 

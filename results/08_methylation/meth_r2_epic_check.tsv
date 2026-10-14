@@ -1,0 +1,7 @@
+check	pct_of_tested_on_artefact_chr	n_hits	pct_of_hits_on_artefact_chr	odds_ratio	p	r
+DMPs, lower methylation in aggressive tumours	50.5339021558035	15345	48.97360703812317	0.9371001436104963	8.277614884515122e-5	NA
+DMPs, higher methylation in aggressive tumours	50.5339021558035	4491	53.48474727232242	1.1270596721497088	6.953366996543204e-5	NA
+platform x phenotype interaction, BH < 0.05	50.5339021558035	0	0	0	1	NA
+platform x phenotype interaction, p < 0.001	50.5339021558035	85	52.94117647058823	1.1012358123674788	0.6661399099991141	NA
+r of t, 450K-only vs EPIC-only fits: chr3-8,17-22	NA	NA	NA	NA	NA	0.5224233987988925
+r of t, 450K-only vs EPIC-only fits: other chromosomes	NA	NA	NA	NA	NA	0.5458711732745005

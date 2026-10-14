@@ -35,6 +35,7 @@ tables <- list(
     cnv_arm_reference_profiles = rd(DIR_SC, "cnv_arm_reference_profiles.tsv"),
     copykat_agreement = rd(DIR_SC, "cnv_caller_agreement.tsv"),
     copykat_by_celltype = rd(DIR_SC, "cnv_caller_by_celltype.tsv"),
+    copykat_seeds = rd(DIR_SC, "copykat_seed_summary.tsv"),
     GSE249995_candidates = rd(DIR_INV, "scrna_gse249995_candidates.tsv"),
     pseudobulk_mean = pb_c(pb$mean), pseudobulk_pct = pb_c(pb$pct),
     lineage_mean = pb_c(pb$lineage_mean), lineage_pct = pb_c(pb$lineage_pct)),
@@ -63,7 +64,11 @@ tables <- list(
     cpg_panel = rd(DIR_METH, "cpg_panel.tsv"),
     cpg_panel_cv = rd(DIR_METH, "cpg_panel_cv.tsv"),
     cpg_panel_sensitivity = rd(DIR_METH, "cpg_panel_sensitivity.tsv"),
-    cpg_panel_scores = rd(DIR_METH, "cpg_panel_scores.tsv")),
+    cpg_panel_scores = rd(DIR_METH, "cpg_panel_scores.tsv"),
+    r2_composition_samples = rd(DIR_METH, "meth_r2_composition_samples.tsv"),
+    r2_models = rd(DIR_METH, "meth_r2_models.tsv"),
+    r2_panel_cpg = rd(DIR_METH, "meth_r2_panel_cpg.tsv"),
+    r2_epic_check = rd(DIR_METH, "meth_r2_epic_check.tsv")),
   S11_Table_multiomic = list(
     candidate_methylation = rd(DIR_MO, "candidate_methylation_support.tsv"),
     enrichment = rd(DIR_MO, "methylation_support_enrichment.tsv"),
@@ -76,7 +81,10 @@ tables <- list(
     methylation_tests = rd(DIR_VAL, "liu_methylation_tests.tsv"),
     power = rd(DIR_VAL, "liu_power.tsv"),
     marker_values = rd(DIR_VAL, "liu_marker_values.tsv"),
-    liu9_in_gse267015 = rd(DIR_VAL, "liu9_in_gse267015.tsv")),
+    liu9_in_gse267015 = rd(DIR_VAL, "liu9_in_gse267015.tsv"),
+    within_subtype_pattern = rd(DIR_VAL, "liu_within_subtype_pattern.tsv"),
+    boundary_tests = rd(DIR_VAL, "liu_boundary_tests.tsv"),
+    subtype2_composition = rd(DIR_VAL, "liu_s2_composition.tsv")),
   S13_Table_copy_number = list(
     samples = rd(DIR_CNV, "cnv_samples.tsv"),
     arm_frequency = rd(DIR_CNV, "cnv_arm_frequency.tsv"),
@@ -94,7 +102,10 @@ tables <- list(
     shortlist_weights = rd(DIR_MOFA, "mofa_shortlist_weights.tsv"),
     stability = rd(DIR_MOFA, "mofa_stability.tsv"),
     cross_cohort = rd(DIR_MOFA, "mofa_cross_cohort.tsv"),
-    rna_weights_shared = rd(DIR_MOFA, "mofa_rna_weights_shared.tsv")),
+    rna_weights_shared = rd(DIR_MOFA, "mofa_rna_weights_shared.tsv"),
+    all_factor_weights = rd(DIR_MOFA, "mofa_all_factor_weights.tsv"),
+    factor_proxies = rd(DIR_MOFA, "mofa_factor_proxies.tsv"),
+    r1_probeset_check = rd(DIR_MOFA, "mofa_r1_probeset_check.tsv")),
   S9_Table_classifier = list(
     lasso_stability = rd(DIR_INV, "lasso_stability.tsv"),
     loco_auc = rd(DIR_INV, "loco_auc.tsv"),
@@ -108,7 +119,7 @@ writeLines(capture.output(sessionInfo()), file.path(DIR_SI, "sessionInfo.txt"))
 # Versions of every package the analysis uses (quoted in Methods by the manuscript build)
 pkgs <- c("GEOquery", "Biobase", "limma", "preprocessCore", "AnnotationDbi", "org.Hs.eg.db",
           "glmnet", "pROC", "Seurat", "SeuratObject", "harmony", "copykat",
-          "immunedeconv", "DMRcate", "IlluminaHumanMethylation450kanno.ilmn12.hg19", "minfi", "data.table", "conumee", "CopyNeutralIMA", "MOFA2",
+          "immunedeconv", "DMRcate", "IlluminaHumanMethylation450kanno.ilmn12.hg19", "minfi", "data.table", "conumee", "CopyNeutralIMA", "MOFA2", "EpiDISH", "sva",
           "readxl", "openxlsx", "dplyr", "ggplot2", "Matrix")
 ver <- data.frame(package = pkgs, version = vapply(pkgs, function(p)
   tryCatch(as.character(utils::packageVersion(p)), error = function(e) NA_character_), character(1)))

@@ -137,6 +137,10 @@ MOFA_N_CPGS    <- 5000  # most variable CpGs (methylation view)
 MOFA_N_FACTORS <- 10
 MOFA_SEEDS     <- 1:5   # extra seeds for the stability check of the main factor
 
+# Round-2 revision
+COPYKAT_SEEDS  <- c(42, 1:4)   # step 06b: CopyKAT repeated with these seeds (first = reported run)
+METH_EPIC_ARTEFACT_CHR <- c(paste0("chr", 3:8), paste0("chr", 17:22))   # step 23: chromosomes with the EPIC copy-number artefact
+
 # -----------------------------------------------------------------------------
 # Reproducibility
 # -----------------------------------------------------------------------------

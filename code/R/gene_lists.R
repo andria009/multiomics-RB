@@ -38,6 +38,19 @@ CELL_TYPE_MARKERS <- list(
   Horizontal    = c("ONECUT1", "ONECUT2", "LHX1", "PROX1")
 )
 
+# Bulk composition and sex proxies (round-2 revision; steps 21 and 24): mean z of each set
+COMPOSITION_PROXIES <- list(
+  stroma       = CELL_TYPE_MARKERS$Fibroblast,
+  endothelial  = CELL_TYPE_MARKERS$Endothelial,
+  immune       = c("PTPRC", CELL_TYPE_MARKERS$Microglia_TAM),
+  rpe_melanocyte = c(CELL_TYPE_MARKERS$RPE, "TYR", "MLANA", "DCT"),
+  rod          = CELL_TYPE_MARKERS$Rod,
+  muller       = CELL_TYPE_MARKERS$Muller_glia,
+  proliferation = setdiff(SUBTYPE_C_MARKERS, "MYCN")
+)
+SEX_FEMALE_GENES <- c("XIST", "TSIX")
+SEX_MALE_GENES   <- c("RPS4Y1", "DDX3Y", "KDM5D", "UTY", "EIF1AY", "USP9Y")
+
 # scRNA cluster types that make up the tumour lineage (neuronal / photoreceptor-like);
 # glia, RPE, immune and stromal types are excluded (step 07)
 TUMOUR_LINEAGE <- c("Cone_like", "Rod", "Bipolar", "Horizontal", "Amacrine")

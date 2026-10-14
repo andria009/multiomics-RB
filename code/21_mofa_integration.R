@@ -17,6 +17,11 @@
 #   mofa_cross_cohort.tsv        agreement of the two cohorts' main factors (RNA-view gene weights)
 #   mofa_rna_weights_shared.tsv  RNA-view weights of the main RNA factor in both cohorts, shared genes
 #   mofa_main_factor_by_view.tsv, mofa_factor_correlation.tsv
+#   (round-2 revision)
+#   mofa_all_factor_weights.tsv  top 25 features per view for every retained factor (oriented)
+#   mofa_factor_proxies.tsv      every retained factor vs composition, sex and RNA-quality proxies
+#   mofa_r1_probeset_check.tsv   Liu model refitted with all 450K probes (as in revision 1): variance
+#                                explained, sex association and sex-chromosome share of top CpG weights
 #
 # One MOFA model per cohort, unsupervised (no labels or histology are used to fit it). Views:
 #   RNA          MOFA_N_GENES most variable genes (log2 expression), centred
@@ -31,6 +36,7 @@
 
 source(here::here("code", "R", "config.R"))
 source(here::here("code", "R", "utils.R"))
+source(here::here("code", "R", "gene_lists.R"))
 if (length(INVASION_EXCLUDE) > 0) stop("Unset INVASION_EXCLUDE.")
 
 load_pkg("MOFA2", bioc = TRUE)
@@ -201,4 +207,71 @@ stab <- dplyr::bind_rows(lapply(c("d", "l"), function(nm) {
   }))
 }))
 save_tsv(stab, file.path(DIR_MOFA, "mofa_stability.tsv")); print(stab)
+# -----------------------------------------------------------------------------
+# 6. Characterisation of every retained factor (round-2 revision)
+#    Top weights; Spearman correlation with composition proxies (mean z of marker sets), a sex score
+#    (XIST minus Y-chromosome genes), the mean of mitochondrial genes (an RNA-quality proxy) and, in
+#    the discovery cohort, ESTIMATE scores from the paired RNA-seq.
+# -----------------------------------------------------------------------------
+ann <- readRDS(file.path(DIR_METH, "meth_probe_annotation.rds"))
+cpg_gene <- function(x) { i <- match(x, ann$cpg); g <- sub(";.*$", "", ann$UCSC_RefGene_Name[i]); ifelse(is.na(g) | g == "", "", g) }
+aw <- dplyr::bind_rows(lapply(res, function(r) dplyr::bind_rows(lapply(colnames(r$Z), function(f) {
+  dplyr::bind_rows(lapply(names(r$W), function(v) {
+    w <- sign(r$rho[[f]]) * MOFA2::get_weights(r$model, views = v, factors = f)[[1]][, 1]
+    o <- head(order(-abs(w)), 25); feat <- sub(paste0("_", v, "$"), "", names(w)[o])
+    data.frame(cohort = r$cohort, factor = f, view = v, rank = seq_along(o), feature = feat,
+               gene = if (v == "Methylation") cpg_gene(feat) else "", weight = unname(w[o]))
+  })) }))))
+save_tsv(aw, file.path(DIR_MOFA, "mofa_all_factor_weights.tsv"))
+
+mt_genes <- function(E) grep("^MT-", rownames(E), value = TRUE)
+proxy_tab <- function(E) {
+  p <- proxy_scores(E, COMPOSITION_PROXIES)
+  mt <- mt_genes(E); p$mito <- if (length(mt) >= 3) colMeans(E[mt, p$sample, drop = FALSE]) else NA_real_
+  p
+}
+E_full <- rna[, smp$rnaseq_sample[smp$paired_rna], drop = FALSE]; colnames(E_full) <- smp$title[smp$paired_rna]
+px_d <- proxy_tab(E_full)
+est <- read.delim(file.path(DIR_IMM, "estimate_purity.tsv"), stringsAsFactors = FALSE)
+est <- est[est$dataset == "GSE268136", ]
+k <- match(smp$rnaseq_sample[match(px_d$sample, smp$title)], est$sample_id)
+px_d$estimate_stroma <- est$stroma_score[k]; px_d$estimate_purity <- est$purity[k]
+if ("immune_score" %in% names(est)) px_d$estimate_immune <- est$immune_score[k]
+px_l <- proxy_tab(X_l)
+fp <- dplyr::bind_rows(lapply(list(list(r = res$d, px = px_d), list(r = res$l, px = px_l)), function(o) {
+  vars <- setdiff(names(o$px), "sample")
+  dplyr::bind_rows(lapply(colnames(o$r$Z), function(f) dplyr::bind_rows(lapply(vars, function(v) {
+    z <- o$r$Z[match(o$px$sample, rownames(o$r$Z)), f]; x <- o$px[[v]]; ok <- !is.na(z) & !is.na(x)
+    if (sum(ok) < 8) return(NULL)
+    ct <- stats::cor.test(z[ok], x[ok], method = "spearman", exact = FALSE)
+    data.frame(cohort = o$r$cohort, factor = f, proxy = v, n = sum(ok), rho = unname(ct$estimate), p = ct$p.value)
+  }))))
+}))
+fp <- fp |> dplyr::group_by(cohort) |> dplyr::mutate(padj = p.adjust(p, "BH")) |> dplyr::ungroup()
+save_tsv(fp, file.path(DIR_MOFA, "mofa_factor_proxies.tsv"))
+big <- ve |> dplyr::group_by(cohort) |> dplyr::summarise(rna = factor[which.max(RNA)], meth = factor[which.max(Methylation)])
+print(as.data.frame(fp[(fp$cohort == "GSE267015" & fp$factor %in% big$rna[big$cohort == "GSE267015"]) |
+                       (fp$cohort == "GSE58783" & fp$factor %in% big$meth[big$cohort == "GSE58783"]), ]), digits = 2)
+
+# Liu model with all probes (revision 1): which factor carried most methylation variance, and was it sex?
+B_all <- readRDS(file.path(DIR_VAL, "liu_beta_top20k_allprobes.rds"))
+load_pkg("minfi", bioc = TRUE); load_pkg("IlluminaHumanMethylation450kanno.ilmn12.hg19", bioc = TRUE)   # getAnnotation needs the package attached
+loc <- as.data.frame(minfi::getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)[, "chr", drop = FALSE])
+views_a <- list(RNA = views_l$RNA, Methylation = pad(centre(top_var(to_M(B_all), MOFA_N_CPGS)), ids_l), CNV = views_l$CNV)
+m_a <- fit_mofa(views_a, GLOBAL_SEED)
+Z_a <- MOFA2::get_factors(m_a)[[1]]; r2_a <- MOFA2::get_variance_explained(m_a)$r2_per_factor[[1]]
+sex_l <- setNames(px_l$sex_score, px_l$sample)
+chk <- dplyr::bind_rows(lapply(rownames(r2_a), function(f) {
+  w <- MOFA2::get_weights(m_a, views = "Methylation", factors = f)[[1]][, 1]
+  top <- sub("_Methylation$", "", names(w)[head(order(-abs(w)), 100)])
+  kk <- intersect(names(sex_l), rownames(Z_a)); d <- lab[match(rownames(Z_a), lab$tumour), ]
+  data.frame(factor = f, r2_rna = r2_a[f, "RNA"], r2_methylation = r2_a[f, "Methylation"], r2_cnv = r2_a[f, "CNV"],
+             rho_sex_score = stats::cor(Z_a[kk, f], sex_l[kk], method = "spearman"),
+             pct_top100_cpg_on_xy = 100 * mean(loc[top, "chr"] %in% c("chrX", "chrY")),
+             auc_subtype2_abs = { y <- as.integer(d$subtype == 2); ok <- !is.na(y)
+               a <- as.numeric(pROC::auc(pROC::roc(y[ok], Z_a[ok, f], quiet = TRUE, direction = "<"))); max(a, 1 - a) })
+}))
+chk <- chk[order(-chk$r2_methylation), ]
+save_tsv(chk, file.path(DIR_MOFA, "mofa_r1_probeset_check.tsv")); print(head(chk, 4), digits = 2)
+
 message("\n[21_mofa_integration.R] Complete.")

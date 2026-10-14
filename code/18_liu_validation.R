@@ -141,9 +141,15 @@ message("GSE58783: ", nrow(Bv), " CpGs x ", ncol(Bv), " tumours")
 
 # matrices for the multi-omics factor analysis (step 21): expression and the most variable CpGs
 save_rds(X, file.path(DIR_VAL, "liu_expression.rds"), "Liu expression (genes x tumours)")
-v_cpg <- apply(Bv, 1, stats::var, na.rm = TRUE)
-save_rds(Bv[head(order(v_cpg, decreasing = TRUE), 20000), , drop = FALSE], file.path(DIR_VAL, "liu_beta_top20k.rds"),
-         "Liu methylation, 20,000 most variable CpGs")
+# Round-2 revision: the MOFA view uses the same probes as the discovery cohort (autosomal, SNP- and
+# cross-hybridisation-filtered; step 13). The first revision used all probes, so sex-chromosome CpGs
+# entered the Liu methylation view; that version is kept for the comparison in step 21.
+top20k <- function(B) { v <- apply(B, 1, stats::var, na.rm = TRUE); B[head(order(v, decreasing = TRUE), 20000), , drop = FALSE] }
+disc_cpg <- rownames(readRDS(file.path(DIR_METH, "meth_beta.rds")))
+save_rds(top20k(Bv[rownames(Bv) %in% disc_cpg, , drop = FALSE]), file.path(DIR_VAL, "liu_beta_top20k.rds"),
+         "Liu methylation, 20,000 most variable CpGs (discovery probe set)")
+save_rds(top20k(Bv), file.path(DIR_VAL, "liu_beta_top20k_allprobes.rds"),
+         "Liu methylation, 20,000 most variable CpGs (all probes, as in revision 1)")
 lab$has_expression <- lab$tumour %in% colnames(X)
 lab$has_methylation <- lab$tumour %in% colnames(Bv)
 save_tsv(lab, file.path(DIR_VAL, "liu_samples.tsv"))

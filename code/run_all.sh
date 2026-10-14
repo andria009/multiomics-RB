@@ -37,5 +37,7 @@ run 18_liu_validation.R
 run 20_cnv_from_methylation.R
 run 22_cnv_liu_crosscheck.R
 run 21_mofa_integration.R
+run 23_methylation_sensitivity_r2.R
+run 24_within_subtype_exploratory.R
 run 19_supporting_info.R   # last: collects the S tables
 echo "=== $(date '+%F %T')  done" | tee -a "$LOG"
